@@ -3,8 +3,10 @@ const app = express();
 const path = require('path');
 const mongoose = require('mongoose');
 const axios = require('axios');
+const schedule = require('node-schedule');
+const puppeteer = require('puppeteer');
 
-const urI = process.env.mongodbURI;
+const urI = "mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0";
 
 function extractHashtags(text) {
     if (!text) {
@@ -14,6 +16,38 @@ function extractHashtags(text) {
     const result = text.replace(/@\w+/g, '');
 
     return result || [];
+};
+
+const downloadVideo = async (videoUrl) => {
+    const writer = fs.createWriteStream(path.join(__dirname, 'downloads'));
+
+    const response = await axios({
+        videoUrl,
+        method: 'GET',
+        responseType: 'stream'
+    });
+
+    response.data.pipe(writer);
+
+    return new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+    });
+};
+
+const deleteVideo = async (folderPath) => {
+    try {
+        const files = fs.readdirSync(folderPath);
+
+        if (files.length > 0) {
+            const filePath = `${folderPath}/${files[0]}`;
+            fs.unlinkSync(filePath);
+        } else {
+            console.log('No files found in the folder:', folderPath);
+        }
+    } catch (err) {
+        console.error('Error deleting file:', err);
+    }
 };
 
 async function vList(user1) {
@@ -58,7 +92,7 @@ const linkSchema = new mongoose.Schema({
     }
 });
 
-const tokenSchema = new mongoose.Schema({
+const pageSchema = new mongoose.Schema({
     page: {
         type: String,
         required: true
@@ -67,14 +101,14 @@ const tokenSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    token: [{
+    url: {
         type: String,
         required: true
-    }]
+    }
 });
 
 const Link = mongoose.model('link', linkSchema);
-const Token = mongoose.model('token', tokenSchema);
+const Page = mongoose.model('token', pageSchema);
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
@@ -86,36 +120,33 @@ app.use(express.json({
     limit: '5mb'
 }));
 
-app.post('/pageadd', async function (req, res) {
-    const pagename = req.body.pagename;
-    const pageid = req.body.pageid;
-    const token = req.body.token;
-    const tokenList = token.split(" ");
+// app.post('/pageadd', async function (req, res) {
+//     const pagename = req.body.pagename;
+//     const pageid = req.body.pageid;
+//     const token = req.body.token;
+//     const tokenList = token.split(" ");
 
-    if (req.body.pass != 'dev@tik@scraper@45') {
-        return res.send('Wrong Password!');
-    }
+//     if (req.body.pass != 'dev@tik@scraper@45') {
+//         return res.send('Wrong Password!');
+//     }
 
-    const pageToken = new Token({
-        page: pagename,
-        pageid: pageid,
-        token: tokenList
-    });
-    await pageToken.save();
+//     const pageToken = new Page({
+//         page: pagename,
+//         pageid: pageid,
+//         token: tokenList
+//     });
+//     await pageToken.save();
 
-    res.send('SUCCESS');
-    res.end();
-});
+//     res.send('SUCCESS');
+//     res.end();
+// });
 
 app.post('/add', async function (req, res) {
     const usernamesS = req.body.usernames || "";
-    const pageName = req.body.atoken;
+
     if (req.body.pass != "dev@tik@scraper@45") {
         return res.send('Wrong Password!');
     }
-    let reqCount = 1;
-    const aToken = await Token.findOne({ page: pageName });
-    let access_token = aToken.token[Math.floor(reqCount / 100)];
     const users = usernamesS.split(" ");
 
     res.send('SUCCESS');
@@ -130,12 +161,12 @@ app.post('/add', async function (req, res) {
                     let vcount = 0;
                     let start = new Date();
                     for (let video of videoList) {
-                        start = new Date(start.getTime() + 60000);
+                        start = new Date(start.getTime() + 20000);
                         schedule.scheduleJob(start, async function () {
                             ++vcount;
                             if (vcount === 60) {
                                 vcount = 0;
-                                await runPauseTask();  
+                                await runPauseTask();
                             };
                             Link.findOne({ link: video.video_id }).then(async result => {
                                 if (result) {
@@ -157,15 +188,15 @@ app.post('/add', async function (req, res) {
                                     try {
                                         const response = await axios.request(options1);
                                         const hashtagsList = await extractHashtags(video.title);
-                                        const result = uploadVideo(access_token, response.data.video[0], hashtagsList);
-                                        if (result === "Success") {
-                                            ++reqCount;
+                                        downloadVideo(response.data.video[0]).then(async () => {
+                                            //Upload video
+                                            await deleteVideo(path.join(__dirname, 'downloads'));
                                             const livkID = new Link({
                                                 link: video.video_id,
                                                 caption: hashtagsList
                                             });
                                             await livkID.save();
-                                        }
+                                        });
                                     } catch (error) {
                                         console.error(error);
                                     }
@@ -180,7 +211,6 @@ app.post('/add', async function (req, res) {
             });
         });
     };
-    console.log("Done!");
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -188,9 +218,9 @@ app.get('/robots.txt', (req, res) => {
     res.sendFile(filePath);
 });
 
-app.get('/pages', function (req, res) {
-    res.render('pages');
-});
+// app.get('/pages', function (req, res) {
+//     res.render('pages');
+// });
 
 app.get('/', function (req, res) {
     Token.find().then((result) => {
