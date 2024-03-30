@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
+const fs = require('fs');
+const https = require('https');
 
 const urI = "mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -18,20 +20,65 @@ function extractHashtags(text) {
     return result || [];
 };
 
-const downloadVideo = async (videoUrl) => {
-    const writer = fs.createWriteStream(path.join(__dirname, 'downloads'));
-
-    const response = await axios({
-        videoUrl,
-        method: 'GET',
-        responseType: 'stream'
+const uploadVideo = async (pageUrl, filename) => {
+    const browser = await puppeteer.launch({
+        headless: false
     });
+    const page = await browser.newPage();
 
-    response.data.pipe(writer);
+    await page.goto('https://www.facebook.com/login');
 
-    return new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
+    // Fill in your username and password
+    await page.type('#email', 'devriousteam@gmail.com');
+    await page.type('#pass', 'Namikaze@1999/09/28');
+
+    // Click the login button
+    await page.click('#loginbutton');
+
+    // Wait for navigation to complete
+    await page.waitForNavigation();
+    await page.waitForNavigation();
+
+    console.log('Logged in successfully!');
+
+    await page.goto(pageUrl);
+
+    // const elements = await page.$$('*');
+    // const switchBtn = elements.find(e => e.innerText === 'Switch Now');
+    // await switchBtn.click();
+
+    await page.waitForNavigation();
+
+    await page.waitForSelector('input[type="file"][aria-label="Photo/Video"]');
+    await page.click('input[type="file"][aria-label="Photo/Video"]');
+
+    const fullname = filename + ".mp4";
+    const videoFilePath = path.join(__dirname, 'downloads', fullname);
+    await fileInput.uploadFile(videoFilePath);
+
+    await page.click('button[data-testid="react-composer-post-button"]');
+
+    await page.waitForSelector('div[data-testid="video-upload-success"]');
+
+    console.log('Video uploaded successfully!');
+
+    await browser.close();
+};
+
+const downloadVideo = async (videoUrl, filename) => {
+    const fullname = filename + ".mp4";
+
+    const file = fs.createWriteStream(path.join(__dirname, 'downloads', fullname));
+    const request = https.get(videoUrl, (response) => {
+        response.pipe(file);
+        file.on('finish', () => {
+            file.close(() => {
+                console.log('Video downloaded successfully!');
+            });
+        });
+    });
+    request.on('error', (error) => {
+        console.error('Error downloading video:', error.message);
     });
 };
 
@@ -120,33 +167,35 @@ app.use(express.json({
     limit: '5mb'
 }));
 
-// app.post('/pageadd', async function (req, res) {
-//     const pagename = req.body.pagename;
-//     const pageid = req.body.pageid;
-//     const token = req.body.token;
-//     const tokenList = token.split(" ");
+app.post('/pageadd', async function (req, res) {
+    const pagename = req.body.pagename;
+    const pageid = req.body.pageid;
+    const token = req.body.token;
 
-//     if (req.body.pass != 'dev@tik@scraper@45') {
-//         return res.send('Wrong Password!');
-//     }
+    if (req.body.pass != 'dev@tik@scraper@45') {
+        return res.send('Wrong Password!');
+    }
 
-//     const pageToken = new Page({
-//         page: pagename,
-//         pageid: pageid,
-//         token: tokenList
-//     });
-//     await pageToken.save();
+    const pageToken = new Page({
+        page: pagename,
+        pageid: pageid,
+        url: token
+    });
+    await pageToken.save();
 
-//     res.send('SUCCESS');
-//     res.end();
-// });
+    res.send('SUCCESS');
+    res.end();
+});
 
 app.post('/add', async function (req, res) {
     const usernamesS = req.body.usernames || "";
+    const pageName = req.body.atoken;
 
     if (req.body.pass != "dev@tik@scraper@45") {
         return res.send('Wrong Password!');
     }
+
+    const pageData = await Page.findOne({ page: pageName });
     const users = usernamesS.split(" ");
 
     res.send('SUCCESS');
@@ -158,16 +207,10 @@ app.post('/add', async function (req, res) {
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
-                    let vcount = 0;
                     let start = new Date();
                     for (let video of videoList) {
-                        start = new Date(start.getTime() + 20000);
+                        start = new Date(start.getTime() + 3000);
                         schedule.scheduleJob(start, async function () {
-                            ++vcount;
-                            if (vcount === 60) {
-                                vcount = 0;
-                                await runPauseTask();
-                            };
                             Link.findOne({ link: video.video_id }).then(async result => {
                                 if (result) {
                                     return;
@@ -188,15 +231,14 @@ app.post('/add', async function (req, res) {
                                     try {
                                         const response = await axios.request(options1);
                                         const hashtagsList = await extractHashtags(video.title);
-                                        downloadVideo(response.data.video[0]).then(async () => {
-                                            //Upload video
-                                            await deleteVideo(path.join(__dirname, 'downloads'));
-                                            const livkID = new Link({
-                                                link: video.video_id,
-                                                caption: hashtagsList
-                                            });
-                                            await livkID.save();
+                                        await downloadVideo(response.data.video[0], video.video_id);
+                                        await uploadVideo(pageData.url, video.video_id);
+                                        await deleteVideo(path.join(__dirname, 'downloads'));
+                                        const livkID = new Link({
+                                            link: video.video_id,
+                                            caption: hashtagsList
                                         });
+                                        await livkID.save();
                                     } catch (error) {
                                         console.error(error);
                                     }
@@ -218,12 +260,12 @@ app.get('/robots.txt', (req, res) => {
     res.sendFile(filePath);
 });
 
-// app.get('/pages', function (req, res) {
-//     res.render('pages');
-// });
+app.get('/pages', function (req, res) {
+    res.render('pages');
+});
 
 app.get('/', function (req, res) {
-    Token.find().then((result) => {
+    Page.find().then((result) => {
         const pageArray = result.map(pageResult => { return pageResult });
         res.render('usernames', { pages: pageArray });
     });
