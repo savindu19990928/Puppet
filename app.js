@@ -4,7 +4,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const schedule = require('node-schedule');
-const puppeteer = require('puppeteer');
+const { Builder, By, Key, until } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const https = require('https');
 
@@ -21,48 +22,50 @@ function extractHashtags(text) {
 };
 
 const uploadVideo = async (pageUrl, filename) => {
-    const browser = await puppeteer.launch({
-        headless: false
-    });
-    const page = await browser.newPage();
+    let driver = await new Builder().forBrowser('chrome').setChromeOptions(new chrome.Options()).build();
+    try {
+        await driver.get('https://www.facebook.com');
 
-    await page.goto('https://www.facebook.com/login');
+        await driver.findElement(By.id('email')).sendKeys('devriousteam@gmail.com');
+        await driver.findElement(By.id('pass')).sendKeys('Namikaze@1999/09/28');
+        const loginBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Log in');");
+        loginBtn.click();
 
-    // Fill in your username and password
-    await page.type('#email', 'devriousteam@gmail.com');
-    await page.type('#pass', 'Namikaze@1999/09/28');
+        await driver.wait(until.urlIs('https://www.facebook.com/checkpoint/?next'));
+        await driver.wait(until.urlIs('https://www.facebook.com/'));
 
-    // Click the login button
-    await page.click('#loginbutton');
+        await driver.get(pageUrl);
 
-    // Wait for navigation to complete
-    await page.waitForNavigation();
-    await page.waitForNavigation();
+        const switchBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Switch Now');");
+        // await driver.executeScript("arguments[0].scrollIntoView();", switchBtn);
 
-    console.log('Logged in successfully!');
+        await driver.manage().setTimeouts({ implicit: 10000 });
 
-    await page.goto(pageUrl);
+        // Click on the 'Upload Video' button
+        const locator = By.xpath("//*[contains(text(), 'Photo/video')]");
+        await driver.wait(() => driver.findElement(locator).isDisplayed(), 10000);
+        const pANDv = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Photo/video');");
+        await driver.executeScript("arguments[0].scrollIntoView();", pANDv);
+        await driver.executeScript("arguments[0].click();", pANDv);
 
-    // const elements = await page.$$('*');
-    // const switchBtn = elements.find(e => e.innerText === 'Switch Now');
-    // await switchBtn.click();
+        // Choose the file to upload
+        const locator1 = By.xpath("//*[contains(text(), 'Post')]");
+        await driver.wait(() => driver.findElement(locator1).isDisplayed(), 10000);
+        let fileInput = await driver.findElement(By.xpath('//input[@type="file"]'));
+        const fullname = filename + ".mp4";
+        await fileInput.sendKeys(path.join(__dirname, 'downloads', fullname));
 
-    await page.waitForNavigation();
+        // Click on the 'Post' button
+        const postBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Post');");
+        await driver.executeScript("arguments[0].click();", postBtn);
 
-    await page.waitForSelector('input[type="file"][aria-label="Photo/Video"]');
-    await page.click('input[type="file"][aria-label="Photo/Video"]');
+        const locator2 = By.xpath("//*[contains(text(), 'Posting')]");
+        await driver.wait(() => driver.findElement(locator2).isDisplayed(), 10000);
 
-    const fullname = filename + ".mp4";
-    const videoFilePath = path.join(__dirname, 'downloads', fullname);
-    await fileInput.uploadFile(videoFilePath);
-
-    await page.click('button[data-testid="react-composer-post-button"]');
-
-    await page.waitForSelector('div[data-testid="video-upload-success"]');
-
-    console.log('Video uploaded successfully!');
-
-    await browser.close();
+    } finally {
+        // Quit the driver
+        console.log("ssss");
+    }
 };
 
 const downloadVideo = async (videoUrl, filename) => {
