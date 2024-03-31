@@ -4,10 +4,9 @@ const path = require('path');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const schedule = require('node-schedule');
-const { Builder, By, Key, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const https = require('https');
+const { spawn } = require('child_process');
 
 const urI = "mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -22,61 +21,35 @@ function extractHashtags(text) {
 };
 
 const uploadVideo = async (pageUrl, filename) => {
-    let driver = await new Builder().forBrowser('chrome').setChromeOptions(new chrome.Options()).build();
-    try {
-        await driver.get('https://www.facebook.com');
+    const fullname = filename + ".mp4";
+    const fpath = path.resolve(__dirname, 'downloads', fullname);
+    const currentDirectory = process.cwd();
 
-        await driver.findElement(By.id('email')).sendKeys('devriousteam@gmail.com');
-        await driver.findElement(By.id('pass')).sendKeys('Namikaze@1999/09/28');
-        const loginBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Log in');");
-        loginBtn.click();
+    const command = 'npx';
+    const args = [
+        'cypress',
+        'run',
+        '--spec',
+        'cypress/e2e/fbUpload.cy.js',
+        '--env',
+        `PAGE_URL=${pageUrl}`,
+        `FILE_PATH=${fpath}`
+    ];
 
-        await driver.wait(until.urlIs('https://www.facebook.com/checkpoint/?next'));
-        await driver.wait(until.urlIs('https://www.facebook.com/'));
+    // Execute command
+    const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
 
-        await driver.get(pageUrl);
+    childProcess.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+    });
 
-        const switchBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Switch Now');");
-        // await driver.executeScript("arguments[0].scrollIntoView();", switchBtn);
+    childProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+    });
 
-        await driver.manage().setTimeouts({ implicit: 10000 });
-
-        // Click on the 'Upload Video' button
-        const locator = By.xpath("//*[contains(text(), 'Photo/video')]");
-        await driver.wait(() => driver.findElement(locator).isDisplayed(), 10000);
-        const pANDv = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Photo/video');");
-        await driver.executeScript("arguments[0].scrollIntoView();", pANDv);
-        await driver.executeScript("arguments[0].click();", pANDv);
-
-        // Choose the file to upload
-        // const locator1 = By.xpath("//*[contains(text(), 'Post')]");
-        // await driver.wait(() => driver.findElement(locator1).isDisplayed(), 10000);
-        const fullname = filename + ".mp4";
-        const fpath = path.resolve(__dirname, 'downloads', fullname);
-        const fileInput = await driver.findElement(By.xpath("//input[@class='x1s85apg' and @type='file']"));
-        await driver.executeScript("arguments[0].setAttribute('value', 'arguments[1]')", fileInput, fpath);
-
-        // const parentForm = await fileInput.findElement(By.xpath("./ancestor::form"));
-        // await parentForm.submit();
-        // const script = "const fileInput = document.querySelector('input[type=file]');fileInput.value = '" + fpath + "';";
-        // await driver.executeScript(script);
-        // await driver.executeScript(`
-        //         let parent = arguments[0];
-        //         while (parent && parent.tagName !== 'form') {
-        //             parent = parent.parentNode;
-        //         }
-        //         parent.submit();
-        //     }
-        // `, fileInput);
-
-        // await fileInput.sendKeys(path.join(__dirname, 'downloads', fullname));
-        // const locator2 = By.xpath("//*[contains(text(), 'Posting')]");
-        // await driver.wait(() => driver.findElement(locator2).isDisplayed(), 10000);
-
-    } finally {
-        // Quit the driver
-        console.log("ssss");
-    }
+    childProcess.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+    });
 };
 
 const downloadVideo = async (videoUrl, filename) => {
@@ -217,13 +190,13 @@ app.post('/add', async function (req, res) {
 
     let begin = new Date();
     for (let user of users) {
-        begin = new Date(begin.getTime() + 3000);
+        begin = new Date(begin.getTime() + 1000);
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
                     let start = new Date();
                     for (let video of videoList) {
-                        start = new Date(start.getTime() + 3000);
+                        start = new Date(start.getTime() + 1000);
                         schedule.scheduleJob(start, async function () {
                             Link.findOne({ link: video.video_id }).then(async result => {
                                 if (result) {
