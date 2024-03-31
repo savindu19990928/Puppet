@@ -49,18 +49,29 @@ const uploadVideo = async (pageUrl, filename) => {
         await driver.executeScript("arguments[0].click();", pANDv);
 
         // Choose the file to upload
-        const locator1 = By.xpath("//*[contains(text(), 'Post')]");
-        await driver.wait(() => driver.findElement(locator1).isDisplayed(), 10000);
-        let fileInput = await driver.findElement(By.xpath('//input[@type="file"]'));
+        // const locator1 = By.xpath("//*[contains(text(), 'Post')]");
+        // await driver.wait(() => driver.findElement(locator1).isDisplayed(), 10000);
         const fullname = filename + ".mp4";
-        await fileInput.sendKeys(path.join(__dirname, 'downloads', fullname));
+        const fpath = path.resolve(__dirname, 'downloads', fullname);
+        const fileInput = await driver.findElement(By.xpath("//input[@class='x1s85apg' and @type='file']"));
+        await driver.executeScript("arguments[0].setAttribute('value', 'arguments[1]')", fileInput, fpath);
 
-        // Click on the 'Post' button
-        const postBtn = await driver.executeScript("return [...document.querySelectorAll('*')].find(el => el.textContent.trim() === 'Post');");
-        await driver.executeScript("arguments[0].click();", postBtn);
+        // const parentForm = await fileInput.findElement(By.xpath("./ancestor::form"));
+        // await parentForm.submit();
+        // const script = "const fileInput = document.querySelector('input[type=file]');fileInput.value = '" + fpath + "';";
+        // await driver.executeScript(script);
+        // await driver.executeScript(`
+        //         let parent = arguments[0];
+        //         while (parent && parent.tagName !== 'form') {
+        //             parent = parent.parentNode;
+        //         }
+        //         parent.submit();
+        //     }
+        // `, fileInput);
 
-        const locator2 = By.xpath("//*[contains(text(), 'Posting')]");
-        await driver.wait(() => driver.findElement(locator2).isDisplayed(), 10000);
+        // await fileInput.sendKeys(path.join(__dirname, 'downloads', fullname));
+        // const locator2 = By.xpath("//*[contains(text(), 'Posting')]");
+        // await driver.wait(() => driver.findElement(locator2).isDisplayed(), 10000);
 
     } finally {
         // Quit the driver
@@ -236,7 +247,7 @@ app.post('/add', async function (req, res) {
                                         const hashtagsList = await extractHashtags(video.title);
                                         await downloadVideo(response.data.video[0], video.video_id);
                                         await uploadVideo(pageData.url, video.video_id);
-                                        await deleteVideo(path.join(__dirname, 'downloads'));
+                                        // await deleteVideo(path.join(__dirname, 'downloads'));
                                         const livkID = new Link({
                                             link: video.video_id,
                                             caption: hashtagsList
