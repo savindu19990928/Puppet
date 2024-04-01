@@ -22,7 +22,7 @@ function extractHashtags(text) {
 
 const uploadVideo = async (pageUrl, filename) => {
     const fullname = filename + ".mp4";
-    const fpath = path.resolve(__dirname, 'downloads', fullname);
+    const fpath = path.resolve(__dirname, 'cypress', 'e2e', 'downloads', fullname);
     const currentDirectory = process.cwd();
 
     const command = 'npx';
@@ -55,7 +55,7 @@ const uploadVideo = async (pageUrl, filename) => {
 const downloadVideo = async (videoUrl, filename) => {
     const fullname = filename + ".mp4";
 
-    const file = fs.createWriteStream(path.join(__dirname, 'downloads', fullname));
+    const file = fs.createWriteStream(path.join(__dirname, 'cypress', 'e2e', 'downloads', fullname));
     const request = https.get(videoUrl, (response) => {
         response.pipe(file);
         file.on('finish', () => {
