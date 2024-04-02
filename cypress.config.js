@@ -21,10 +21,10 @@ module.exports = defineConfig({
           await mongoose.connect(uri);
           const db = mongoose.connection.useDb('puppet');
           const Collection = db.collection('links');
-          await Collection.findOne({ page_url: pageurl, link: videoID }).then(async result => {
-            result.uploaded = true;
-            await result.save();
+          await Collection.findOneAndUpdate({ page_url: pageurl, link: videoID }, { $set: { uploaded: true } }, function(err, res) {
+            console.log(err);
           });
+          return "Success!";
         },
       });
     },
