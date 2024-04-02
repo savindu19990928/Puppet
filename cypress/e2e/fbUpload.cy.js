@@ -14,25 +14,24 @@ describe('Facebook Login and Video Upload', () => {
     cy.contains('Log in').click();
 
     cy.intercept('https://www.facebook.com/', {});
-    cy.visit('https://www.facebook.com/profile.php?id=100086654302870');
+    cy.visit(pageUrl);
     cy.contains('Reload Page').click();
     cy.contains('Switch Now').click();
-    cy.wait(30000);
+    cy.wait(10000);
 
-    const videoList = cy.task('getDynamicEntries', 'https://www.facebook.com/profile.php?id=100086654302870').then((entries) => {
-      return entries
-    });
-
-    videoList.forEach(video => {
-      cy.contains('Photo/video').scrollIntoView();
-      cy.contains('Photo/video').click();
-      const fullName = video.link + '.mp4';
-      const fpath = path.join(__dirname, 'downloads', fullName);
-      cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
-      cy.wait(2000);
-      cy.get('[aria-label="Post"]').should('be.visible');
-      cy.get('[aria-label="Post"]').click();
-      cy.wait(30000);
+    cy.task('getDynamicEntries', pageUrl).then((entries) => {
+      cy.wrap(entries).each(video => {
+        cy.contains('Photo/video').scrollIntoView();
+        cy.contains('Photo/video').click();
+        const fullName = video.link + '.mp4';
+        const fpath = path.join(__dirname, 'downloads', fullName);
+        cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
+        cy.wait(2000);
+        cy.get('[aria-label="Post"]').should('be.visible');
+        cy.get('[aria-label="Post"]').click();
+        cy.task('updateDynamicEntry', {pageurl: pageUrl, videoID: video.link});
+        cy.wait(30000);
+      });
     });
   });
 });

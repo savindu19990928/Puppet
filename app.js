@@ -207,7 +207,7 @@ app.post('/add', async function (req, res) {
                             start = new Date(start.getTime() + 1000);
                             schedule.scheduleJob(start, async function () {
                                 await uploadVideo(pageData.url);
-                                await deleteVideo();
+                                // await deleteVideo();
                                 Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
                                     if (result) {
                                         return;
@@ -245,8 +245,7 @@ app.post('/add', async function (req, res) {
                         } else {
                             start = new Date(start.getTime() + 1000);
                             schedule.scheduleJob(start, async function () {
-                                await uploadVideo(pageData.url, video.video_id);
-                                Link.findOne({ link: video.video_id }).then(async result => {
+                                Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
                                     if (result) {
                                         return;
                                     } else {

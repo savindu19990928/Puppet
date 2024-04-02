@@ -11,10 +11,20 @@ module.exports = defineConfig({
       on('task', {
         getDynamicEntries: async (pageurl) => {
           const uri = 'mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0';
-          await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+          await mongoose.connect(uri);
           const db = mongoose.connection.useDb('puppet');
           const Collection = db.collection('links');
-          return await Collection.find({ page_url: pageurl, uploaded: true }).toArray();
+          return await Collection.find({ page_url: pageurl, uploaded: false }).toArray();
+        },
+        updateDynamicEntry: async (pageurl, videoID) => {
+          const uri = 'mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0';
+          await mongoose.connect(uri);
+          const db = mongoose.connection.useDb('puppet');
+          const Collection = db.collection('links');
+          await Collection.findOne({ page_url: pageurl, link: videoID }).then(async result => {
+            result.uploaded = true;
+            await result.save();
+          });
         },
       });
     },
