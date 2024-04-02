@@ -21,8 +21,6 @@ function extractHashtags(text) {
 };
 
 const uploadVideo = async (pageUrl, filename) => {
-    const fullname = filename + ".mp4";
-    const fpath = path.resolve(__dirname, 'cypress', 'e2e', 'downloads', fullname);
     const currentDirectory = process.cwd();
 
     const command = 'npx';
@@ -32,11 +30,9 @@ const uploadVideo = async (pageUrl, filename) => {
         '--spec',
         'cypress/e2e/fbUpload.cy.js',
         '--env',
-        `PAGE_URL=${pageUrl}`,
-        `FILE_PATH=${fpath}`
+        `PAGE_URL=${pageUrl}`
     ];
 
-    // Execute command
     const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
 
     childProcess.stdout.on('data', (data) => {
@@ -69,16 +65,16 @@ const downloadVideo = async (videoUrl, filename) => {
     });
 };
 
-const deleteVideo = async (folderPath) => {
+const deleteVideo = async () => {
     try {
+        const uploadedList = await Link.find({uploaded:true});
         const files = fs.readdirSync(folderPath);
 
-        if (files.length > 0) {
-            const filePath = `${folderPath}/${files[0]}`;
+        uploadedList.forEach(uVideo => {
+            const filen = uVideo.link + ".mp4";
+            const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
             fs.unlinkSync(filePath);
-        } else {
-            console.log('No files found in the folder:', folderPath);
-        }
+        });
     } catch (err) {
         console.error('Error deleting file:', err);
     }
@@ -123,7 +119,15 @@ const linkSchema = new mongoose.Schema({
     },
     caption: {
         type: String
-    }
+    },
+    page_url:{
+        type: String,
+        required: true
+    },
+    uploaded: {
+        type: Boolean,
+        required: true
+    },
 });
 
 const pageSchema = new mongoose.Schema({
@@ -194,45 +198,89 @@ app.post('/add', async function (req, res) {
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
+                    let iCount = 0;
                     let start = new Date();
                     for (let video of videoList) {
-                        start = new Date(start.getTime() + 1000);
-                        schedule.scheduleJob(start, async function () {
-                            Link.findOne({ link: video.video_id }).then(async result => {
-                                if (result) {
-                                    return;
-                                } else {
-                                    const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
-                                    const options1 = {
-                                        method: 'GET',
-                                        url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
-                                        params: {
-                                            url: url
-                                        },
-                                        headers: {
-                                            'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
-                                            'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
+                        ++iCount;
+                        if (iCount === 100) {
+                            iCount = 0;
+                            start = new Date(start.getTime() + 1000);
+                            schedule.scheduleJob(start, async function () {
+                                await uploadVideo(pageData.url);
+                                await deleteVideo();
+                                Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
+                                    if (result) {
+                                        return;
+                                    } else {
+                                        const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
+                                        const options1 = {
+                                            method: 'GET',
+                                            url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
+                                            params: {
+                                                url: url
+                                            },
+                                            headers: {
+                                                'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
+                                                'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
+                                            }
+                                        };
+
+                                        try {
+                                            const response = await axios.request(options1);
+                                            const hashtagsList = await extractHashtags(video.title);
+                                            await downloadVideo(response.data.video[0], video.video_id);
+                                            const livkID = new Link({
+                                                link: video.video_id,
+                                                caption: hashtagsList,
+                                                page_url: pageData.url,
+                                                uploaded: false
+                                            });
+                                            await livkID.save();
+                                        } catch (error) {
+                                            console.error(error);
                                         }
-                                    };
-
-                                    try {
-                                        const response = await axios.request(options1);
-                                        const hashtagsList = await extractHashtags(video.title);
-                                        await downloadVideo(response.data.video[0], video.video_id);
-                                        await uploadVideo(pageData.url, video.video_id);
-                                        // await deleteVideo(path.join(__dirname, 'downloads'));
-                                        const livkID = new Link({
-                                            link: video.video_id,
-                                            caption: hashtagsList
-                                        });
-                                        await livkID.save();
-                                    } catch (error) {
-                                        console.error(error);
                                     }
-                                }
+                                });
                             });
-                        });
+                        } else {
+                            start = new Date(start.getTime() + 1000);
+                            schedule.scheduleJob(start, async function () {
+                                await uploadVideo(pageData.url, video.video_id);
+                                Link.findOne({ link: video.video_id }).then(async result => {
+                                    if (result) {
+                                        return;
+                                    } else {
+                                        const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
+                                        const options1 = {
+                                            method: 'GET',
+                                            url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
+                                            params: {
+                                                url: url
+                                            },
+                                            headers: {
+                                                'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
+                                                'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
+                                            }
+                                        };
 
+                                        try {
+                                            const response = await axios.request(options1);
+                                            const hashtagsList = await extractHashtags(video.title);
+                                            await downloadVideo(response.data.video[0], video.video_id);
+                                            const livkID = new Link({
+                                                link: video.video_id,
+                                                caption: hashtagsList,
+                                                page_url: pageData.url,
+                                                uploaded: false
+                                            });
+                                            await livkID.save();
+                                        } catch (error) {
+                                            console.error(error);
+                                        }
+                                    }
+                                });
+                            });
+                        };
                     };
                 } catch (error) {
                     console.error(error);
