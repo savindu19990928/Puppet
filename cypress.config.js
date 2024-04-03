@@ -7,7 +7,7 @@ module.exports = defineConfig({
   experimentalModifyObstructiveThirdPartyCode: true,
   watchForFileChanges: false,
   experimentalTaskParallelization: true,
-  // taskTimeout: 60000,
+  bail: false,
 
   e2e: {
     setupNodeEvents(on, config) {

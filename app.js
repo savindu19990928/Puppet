@@ -20,7 +20,7 @@ function extractHashtags(text) {
     return result || [];
 };
 
-const uploadVideo = async (pageUrl, filename) => {
+const uploadVideo = async (pageUrl) => {
     const currentDirectory = process.cwd();
 
     const command = 'npx';
@@ -35,9 +35,6 @@ const uploadVideo = async (pageUrl, filename) => {
 
     const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
 
-    console.log(childProcess.pid);
-    // const processID = childProcess.pid;
-
     childProcess.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
     });
@@ -47,14 +44,12 @@ const uploadVideo = async (pageUrl, filename) => {
     });
 
     childProcess.on('close', (code) => {
-        console.log(`child process exited with code ${code}`);
-        // process.kill(processID);
+        return console.log(`child process exited with code ${code}`);
     });
 };
 
 const downloadVideo = async (videoUrl, filename) => {
     const fullname = filename + ".mp4";
-
     const file = fs.createWriteStream(path.join(__dirname, 'cypress', 'e2e', 'downloads', fullname));
     const request = https.get(videoUrl, (response) => {
         response.pipe(file);
@@ -73,7 +68,7 @@ const deleteVideo = async () => {
     try {
         const uploadedList = await Link.find({ uploaded: true });
         uploadedList.forEach(uVideo => {
-            const filen = uVideo.link + ".mp4";
+            const filen = uVideo.name + ".mp4";
             const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
             fs.unlinkSync(filePath);
             console.log("Video deleted successfully!");
@@ -117,6 +112,10 @@ mongoose.connect(urI);
 
 const linkSchema = new mongoose.Schema({
     link: {
+        type: String,
+        required: true
+    },
+    name: {
         type: String,
         required: true
     },
@@ -228,9 +227,12 @@ app.post('/add', async function (req, res) {
                                         try {
                                             const response = await axios.request(options1);
                                             const hashtagsList = await extractHashtags(video.title);
-                                            await downloadVideo(response.data.video[0], video.video_id);
+                                            const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
+                                            const filename = video.video_id + randomNumber;
+                                            await downloadVideo(response.data.video[0], filename);
                                             const livkID = new Link({
                                                 link: video.video_id,
+                                                name: filename,
                                                 caption: hashtagsList,
                                                 page_url: pageData.url,
                                                 uploaded: false
@@ -265,9 +267,12 @@ app.post('/add', async function (req, res) {
                                         try {
                                             const response = await axios.request(options1);
                                             const hashtagsList = await extractHashtags(video.title);
-                                            await downloadVideo(response.data.video[0], video.video_id);
+                                            const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
+                                            const filename = video.video_id + randomNumber;
+                                            await downloadVideo(response.data.video[0], filename);
                                             const livkID = new Link({
                                                 link: video.video_id,
+                                                name: filename,
                                                 caption: hashtagsList,
                                                 page_url: pageData.url,
                                                 uploaded: false

@@ -28,7 +28,7 @@ describe('Facebook Login and Video Upload', () => {
             try {
               cy.contains('Photo/video').scrollIntoView();
               cy.contains('Photo/video').click();
-              const fullName = video.link + '.mp4';
+              const fullName = video.name + '.mp4';
               const fpath = path.join(__dirname, 'downloads', fullName);
               cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
               cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
@@ -36,6 +36,12 @@ describe('Facebook Login and Video Upload', () => {
               cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
               cy.get('[aria-label="Post"]').click();
               cy.wait(2000);
+              try {
+                cy.contains('Not now').should('be.visible');
+                cy.contains('Not now').click();
+              } catch (error) {
+                cy.log(error);
+              }
               cy.contains('Posting', { timeout: 60000 }).should('be.visible');
               cy.contains('Posting', { timeout: 60000 }).should('not.exist');
               cy.task('updateDynamicEntry', { videoID: video._id });
