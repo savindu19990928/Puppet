@@ -20,7 +20,7 @@ function extractHashtags(text) {
     return result || [];
 };
 
-const uploadVideo = async (pageUrl) => {
+const uploadVideo = async (pageUrl, user, pass) => {
     const currentDirectory = process.cwd();
 
     const command = 'npx';
@@ -30,7 +30,7 @@ const uploadVideo = async (pageUrl) => {
         '--spec',
         'cypress/e2e/fbUpload.cy.js',
         '--env',
-        `PAGE_URL=${pageUrl}`
+        `PAGE_URL=${pageUrl},PASS=${pass},USER=${user}`
     ];
 
     const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
@@ -183,6 +183,8 @@ app.post('/pageadd', async function (req, res) {
 app.post('/add', async function (req, res) {
     const usernamesS = req.body.usernames || "";
     const pageName = req.body.atoken;
+    const aPass = req.body.apass;
+    const uname = req.body.uname;
 
     if (req.body.pass != "dev@tik@scraper@45") {
         return res.send('Wrong Password!');
@@ -243,7 +245,7 @@ app.post('/add', async function (req, res) {
                                         }
                                     }
                                 });
-                                await uploadVideo(pageData.url);
+                                await uploadVideo(pageData.url, uname, aPass);
                             });
                         } else {
                             start = new Date(start.getTime() + 1000);

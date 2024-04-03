@@ -1,4 +1,6 @@
 const pageUrl = Cypress.env('PAGE_URL');
+const pass = Cypress.env('PASS');
+const user = Cypress.env('USER');
 import path from 'path';
 
 describe('Facebook Login and Video Upload', () => {
@@ -9,8 +11,8 @@ describe('Facebook Login and Video Upload', () => {
   it('Logs in through Facebook authentication', () => {
     try {
       cy.visit('https://www.facebook.com/');
-      cy.get('input[id="email"]').type('devriousteam@gmail.com');
-      cy.get('input[id="pass"]').type('Namikaze@1999/09/28');
+      cy.get('input[id="email"]').type(user);
+      cy.get('input[id="pass"]').type(pass);
       cy.contains('Log in').click();
 
       cy.intercept('https://www.facebook.com/', {});

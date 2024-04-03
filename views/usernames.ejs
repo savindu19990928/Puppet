@@ -185,6 +185,16 @@
               <div class="invalid-feedback">Please enter your Password!</div>
             </div>
             <div class="col-sm-6">
+              <label class="form-label fs-base" for="uname">Account username</label>
+              <input name="uname" class="form-control form-control-lg" type="text" required id="uname">
+              <div class="invalid-feedback">Please enter your Account username!</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fs-base" for="pname">Account password</label>
+              <input name="apass" class="form-control form-control-lg" type="text" required id="pname">
+              <div class="invalid-feedback">Please enter your Account password</div>
+            </div>
+            <div class="col-sm-6">
               <label class="form-label fs-base" for="location">Select page</label>
               <select name="atoken" class="form-select form-select-lg" id="location" required>
                 <% pages.forEach(page => { %>
@@ -204,7 +214,6 @@
         </div>
       </div>
     </section>
-    <a class="btn btn-lg btn-primary" href="/token">Token Change</a>
     <a class="btn btn-lg btn-primary" href="/pages">Add Page</a>
   </main>
   <!-- Back to top button--><a class="btn-scroll-top" href="#top" data-scroll>
