@@ -35,6 +35,9 @@ const uploadVideo = async (pageUrl, filename) => {
 
     const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
 
+    console.log(childProcess.pid);
+    // const processID = childProcess.pid;
+
     childProcess.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
     });
@@ -45,6 +48,7 @@ const uploadVideo = async (pageUrl, filename) => {
 
     childProcess.on('close', (code) => {
         console.log(`child process exited with code ${code}`);
+        // process.kill(processID);
     });
 };
 
@@ -68,12 +72,11 @@ const downloadVideo = async (videoUrl, filename) => {
 const deleteVideo = async () => {
     try {
         const uploadedList = await Link.find({ uploaded: true });
-        const files = fs.readdirSync(folderPath);
-
         uploadedList.forEach(uVideo => {
             const filen = uVideo.link + ".mp4";
             const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
             fs.unlinkSync(filePath);
+            console.log("Video deleted successfully!");
         });
     } catch (err) {
         console.error('Error deleting file:', err);
@@ -198,17 +201,14 @@ app.post('/add', async function (req, res) {
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
-                    let iCount = 0;
+                    let iCount = 1;
                     let start = new Date();
                     for (let video of videoList) {
-                        ++iCount;
-                        if (iCount === 100) {
+                        if (iCount === 100 || iCount === videoList.length) {
                             iCount = 0;
                             start = new Date(start.getTime() + 1000);
                             schedule.scheduleJob(start, async function () {
-                                await uploadVideo(pageData.url);
-                                await deleteVideo();
-                                Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
+                                await Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
                                     if (result) {
                                         return;
                                     } else {
@@ -241,6 +241,7 @@ app.post('/add', async function (req, res) {
                                         }
                                     }
                                 });
+                                await uploadVideo(pageData.url);
                             });
                         } else {
                             start = new Date(start.getTime() + 1000);
@@ -279,6 +280,7 @@ app.post('/add', async function (req, res) {
                                 });
                             });
                         };
+                        ++iCount;
                     };
                 } catch (error) {
                     console.error(error);
@@ -295,6 +297,7 @@ app.post('/deletevideo/:id', async (req, res) => {
             result.uploaded = true;
             result.save();
         });
+        await deleteVideo();
         return res.end();
     } catch (error) {
         console.error(error);
