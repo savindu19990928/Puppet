@@ -1,10 +1,13 @@
 const { defineConfig } = require("cypress");
 const mongoose = require('mongoose');
+const { exec } = require('child_process');
 
 module.exports = defineConfig({
   experimentalSessionAndOrigin: true,
   experimentalModifyObstructiveThirdPartyCode: true,
   watchForFileChanges: false,
+  experimentalTaskParallelization: true,
+  // taskTimeout: 60000,
 
   e2e: {
     setupNodeEvents(on, config) {
@@ -16,16 +19,18 @@ module.exports = defineConfig({
           const Collection = db.collection('links');
           return await Collection.find({ page_url: pageurl, uploaded: false }).toArray();
         },
-        updateDynamicEntry: async (pageurl, videoID) => {
-          const uri = 'mongodb+srv://ssw1naruto:Devrious45Uzumaki@cluster0.02z5qpg.mongodb.net/puppet?retryWrites=true&w=majority&appName=Cluster0';
-          await mongoose.connect(uri);
-          const db = mongoose.connection.useDb('puppet');
-          const Collection = db.collection('links');
-          await Collection.findOneAndUpdate({ page_url: pageurl, link: videoID }, { $set: { uploaded: true } }, function(err, res) {
-            console.log(err);
+        updateDynamicEntry: async (data) => {
+          const iD = JSON.stringify(data.videoID);
+          const resultID = iD.substring(1, iD.length - 1);
+          exec(`curl -X POST -H "Content-Type: application/json" http://localhost:3000/deletevideo/${resultID}`, (err, stdout, stderr) => {
+            if (err) {
+              console.error(err);
+            } else {
+              console.log(stdout);
+            }
           });
-          return "Success!";
-        },
+          return "Done!"
+        }
       });
     },
   },

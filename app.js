@@ -67,7 +67,7 @@ const downloadVideo = async (videoUrl, filename) => {
 
 const deleteVideo = async () => {
     try {
-        const uploadedList = await Link.find({uploaded:true});
+        const uploadedList = await Link.find({ uploaded: true });
         const files = fs.readdirSync(folderPath);
 
         uploadedList.forEach(uVideo => {
@@ -120,7 +120,7 @@ const linkSchema = new mongoose.Schema({
     caption: {
         type: String
     },
-    page_url:{
+    page_url: {
         type: String,
         required: true
     },
@@ -207,7 +207,7 @@ app.post('/add', async function (req, res) {
                             start = new Date(start.getTime() + 1000);
                             schedule.scheduleJob(start, async function () {
                                 await uploadVideo(pageData.url);
-                                // await deleteVideo();
+                                await deleteVideo();
                                 Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
                                     if (result) {
                                         return;
@@ -261,7 +261,6 @@ app.post('/add', async function (req, res) {
                                                 'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
                                             }
                                         };
-
                                         try {
                                             const response = await axios.request(options1);
                                             const hashtagsList = await extractHashtags(video.title);
@@ -287,6 +286,19 @@ app.post('/add', async function (req, res) {
             });
         });
     };
+});
+
+app.post('/deletevideo/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        await Link.findById(id).then((result) => {
+            result.uploaded = true;
+            result.save();
+        });
+        return res.end();
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 app.get('/robots.txt', (req, res) => {
