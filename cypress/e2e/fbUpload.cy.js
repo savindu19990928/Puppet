@@ -3,6 +3,10 @@ const pass = Cypress.env('PASS');
 const user = Cypress.env('USER');
 import path from 'path';
 
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 describe('Facebook Login and Video Upload', () => {
   beforeEach(() => {
     cy.viewport(1280, 720);
@@ -28,12 +32,12 @@ describe('Facebook Login and Video Upload', () => {
         const fpath = path.join(__dirname, 'downloads', fullName);
         cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
         cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
-        const time1 = cy.task('getNumberTwo');
+        const time1 = getRandomNumber(2000, 4000);
         cy.wait(time1);
         cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
         cy.get('[aria-label="Post"]').click();
-        const time2 = cy.task('getNumberTwo');
-        cy.wait(2000);
+        const time2 = getRandomNumber(2000, 4000);
+        cy.wait(time2);
         cy.get('body').then(($body) => {
           if ($body.find('*:contains("Not now")').length > 0) {
             cy.contains('Not now').click();
@@ -42,7 +46,7 @@ describe('Facebook Login and Video Upload', () => {
         cy.contains('Posting', { timeout: 60000 }).should('be.visible');
         cy.contains('Posting', { timeout: 60000 }).should('not.exist');
         cy.task('updateDynamicEntry', { videoID: video._id });
-        const time = cy.task('getNumberOne');
+        const time = getRandomNumber(15000, 60000);
         cy.wait(time);
       });
     });
