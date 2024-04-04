@@ -165,7 +165,7 @@ app.post('/pageadd', async function (req, res) {
     const pageid = req.body.pageid;
     const token = req.body.token;
 
-    if (req.body.pass != 'dev@tik@scraper@45') {
+    if (req.body.pass !== 'dev@tik@scraper@45') {
         return res.send('Wrong Password!');
     }
 
@@ -186,7 +186,7 @@ app.post('/add', async function (req, res) {
     const aPass = req.body.apass;
     const uname = req.body.uname;
 
-    if (req.body.pass != "dev@tik@scraper@45") {
+    if (req.body.pass !== "dev@tik@scraper@45") {
         return res.send('Wrong Password!');
     }
 
@@ -198,96 +198,63 @@ app.post('/add', async function (req, res) {
 
     let begin = new Date();
     for (let user of users) {
-        begin = new Date(begin.getTime() + 1000);
+        begin = new Date(begin.getTime() + 3000);
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
                     let iCount = 1;
+                    let vcount = 1;
                     let start = new Date();
+                    let open = new Date();
                     for (let video of videoList) {
-                        if (iCount === 100 || iCount === videoList.length) {
-                            iCount = 0;
-                            start = new Date(start.getTime() + 1000);
-                            schedule.scheduleJob(start, async function () {
-                                await Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
-                                    if (result) {
-                                        return;
-                                    } else {
-                                        const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
-                                        const options1 = {
-                                            method: 'GET',
-                                            url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
-                                            params: {
-                                                url: url
-                                            },
-                                            headers: {
-                                                'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
-                                                'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
-                                            }
-                                        };
+                        start = new Date(start.getTime() + 10000);
+                        schedule.scheduleJob(start, async function () {
+                            await Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
+                                if (result) {
+                                    return;
+                                } else {
+                                    const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
+                                    const options1 = {
+                                        method: 'GET',
+                                        url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
+                                        params: {
+                                            url: url
+                                        },
+                                        headers: {
+                                            'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
+                                            'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
+                                        }
+                                    };
 
-                                        try {
-                                            const response = await axios.request(options1);
-                                            const hashtagsList = await extractHashtags(video.title);
-                                            const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
-                                            const filename = video.video_id + randomNumber;
-                                            await downloadVideo(response.data.video[0], filename);
-                                            const livkID = new Link({
-                                                link: video.video_id,
-                                                name: filename,
-                                                caption: hashtagsList,
-                                                page_url: pageData.url,
-                                                uploaded: false
-                                            });
-                                            await livkID.save();
-                                        } catch (error) {
-                                            console.error(error);
-                                        }
+                                    try {
+                                        const response = await axios.request(options1);
+                                        const hashtagsList = await extractHashtags(video.title);
+                                        const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
+                                        const filename = video.video_id + randomNumber;
+                                        await downloadVideo(response.data.video[0], filename);
+                                        const livkID = new Link({
+                                            link: video.video_id,
+                                            name: filename,
+                                            caption: hashtagsList,
+                                            page_url: pageData.url,
+                                            uploaded: false
+                                        });
+                                        await livkID.save();
+                                    } catch (error) {
+                                        console.error(error);
                                     }
-                                });
-                                await uploadVideo(pageData.url, uname, aPass);
+                                }
                             });
-                        } else {
-                            start = new Date(start.getTime() + 1000);
-                            schedule.scheduleJob(start, async function () {
-                                Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
-                                    if (result) {
-                                        return;
-                                    } else {
-                                        const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
-                                        const options1 = {
-                                            method: 'GET',
-                                            url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
-                                            params: {
-                                                url: url
-                                            },
-                                            headers: {
-                                                'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
-                                                'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
-                                            }
-                                        };
-                                        try {
-                                            const response = await axios.request(options1);
-                                            const hashtagsList = await extractHashtags(video.title);
-                                            const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
-                                            const filename = video.video_id + randomNumber;
-                                            await downloadVideo(response.data.video[0], filename);
-                                            const livkID = new Link({
-                                                link: video.video_id,
-                                                name: filename,
-                                                caption: hashtagsList,
-                                                page_url: pageData.url,
-                                                uploaded: false
-                                            });
-                                            await livkID.save();
-                                        } catch (error) {
-                                            console.error(error);
-                                        }
-                                    }
-                                });
+                        });
+                        if (iCount === 100 || vcount === videoList.length) {
+                            iCount = 0;
+                            open = new Date(open.getTime() + 10000);
+                            schedule.scheduleJob(open, async function () {
+                                await uploadVideo(pageData.url, uname, aPass);
                             });
                         };
                         ++iCount;
+                        ++vcount;
                     };
                 } catch (error) {
                     console.error(error);
@@ -327,5 +294,5 @@ app.get('/', function (req, res) {
     });
 });
 
-app.listen(process.env.PORT || 3000);
+app.listen(3000);
 //dev@tik@scraper@45

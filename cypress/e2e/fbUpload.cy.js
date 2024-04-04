@@ -6,57 +6,46 @@ import path from 'path';
 describe('Facebook Login and Video Upload', () => {
   beforeEach(() => {
     cy.viewport(1280, 720);
+    Cypress.on('fail', (error, runnable) => {
+      cy.reload();
+      cy.wait(5000);
+    });
   });
 
   it('Logs in through Facebook authentication', () => {
-    try {
-      cy.visit('https://www.facebook.com/');
-      cy.get('input[id="email"]').type(user);
-      cy.get('input[id="pass"]').type(pass);
-      cy.contains('Log in').click();
+    cy.visit('https://www.facebook.com/');
+    cy.get('input[id="email"]').type(user);
+    cy.get('input[id="pass"]').type(pass);
+    cy.contains('Log in').click();
 
-      cy.intercept('https://www.facebook.com/', {});
-      cy.visit(pageUrl);
-      try {
-        cy.contains('Reload Page').click();
-      } catch (error) {
-        console.log(error);
-      }
-      cy.contains('Switch Now').click();
-      cy.wait(10000);
-      try {
-        cy.task('getDynamicEntries', pageUrl).then((entries) => {
-          cy.wrap(entries).each(video => {
-            try {
-              cy.contains('Photo/video').scrollIntoView();
-              cy.contains('Photo/video').click();
-              const fullName = video.name + '.mp4';
-              const fpath = path.join(__dirname, 'downloads', fullName);
-              cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
-              cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
-              cy.wait(2000);
-              cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
-              cy.get('[aria-label="Post"]').click();
-              cy.wait(2000);
-              try {
-                cy.contains('Not now').should('be.visible');
-                cy.contains('Not now').click();
-              } catch (error) {
-                cy.log(error);
-              }
-              cy.contains('Posting', { timeout: 60000 }).should('be.visible');
-              cy.contains('Posting', { timeout: 60000 }).should('not.exist');
-              cy.task('updateDynamicEntry', { videoID: video._id });
-            } catch (error) {
-              cy.log(error);
-            }
-          });
+    cy.intercept('https://www.facebook.com/', {});
+    cy.visit(pageUrl);
+    cy.contains('Reload Page').click();
+    cy.contains('Switch Now', { timeout: 60000 }).should('be.visible');
+    cy.contains('Switch Now').click();
+    cy.wait(10000);
+    cy.task('getDynamicEntries', pageUrl).then((entries) => {
+      cy.wrap(entries).each(video => {
+        cy.contains('Photo/video').scrollIntoView();
+        cy.contains('Photo/video').click();
+        const fullName = video.name + '.mp4';
+        const fpath = path.join(__dirname, 'downloads', fullName);
+        cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
+        cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
+        cy.wait(2000);
+        cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
+        cy.get('[aria-label="Post"]').click();
+        cy.wait(2000);
+        cy.get('body').then(($body) => {
+          if ($body.find('*:contains("Not now")').length > 0) {
+            cy.contains('Not now').click();
+          }
         });
-      } catch (error) {
-        cy.log(error);
-      }
-    } catch (error) {
-      cy.log(error);
-    }
+        cy.contains('Posting', { timeout: 60000 }).should('be.visible');
+        cy.contains('Posting', { timeout: 60000 }).should('not.exist');
+        cy.task('updateDynamicEntry', { videoID: video._id });
+        cy.wait(30000);
+      });
+    });
   });
 });
