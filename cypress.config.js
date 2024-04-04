@@ -7,6 +7,7 @@ module.exports = defineConfig({
   experimentalModifyObstructiveThirdPartyCode: true,
   watchForFileChanges: false,
   experimentalTaskParallelization: true,
+  userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
 
   e2e: {
     setupNodeEvents(on, config) {
@@ -29,6 +30,12 @@ module.exports = defineConfig({
             }
           });
           return "Done!"
+        },
+        getNumberOne: () => {
+          return Math.floor(Math.random() * (60000 - 15000 + 1)) + 15000;
+        },
+        getNumberTwo: () => {
+          return Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
         }
       });
     },

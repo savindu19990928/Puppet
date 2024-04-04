@@ -6,10 +6,6 @@ import path from 'path';
 describe('Facebook Login and Video Upload', () => {
   beforeEach(() => {
     cy.viewport(1280, 720);
-    Cypress.on('fail', (error, runnable) => {
-      cy.reload();
-      cy.wait(5000);
-    });
   });
 
   it('Logs in through Facebook authentication', () => {
@@ -32,9 +28,11 @@ describe('Facebook Login and Video Upload', () => {
         const fpath = path.join(__dirname, 'downloads', fullName);
         cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
         cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
-        cy.wait(2000);
+        const time1 = cy.task('getNumberTwo');
+        cy.wait(time1);
         cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
         cy.get('[aria-label="Post"]').click();
+        const time2 = cy.task('getNumberTwo');
         cy.wait(2000);
         cy.get('body').then(($body) => {
           if ($body.find('*:contains("Not now")').length > 0) {
@@ -44,7 +42,8 @@ describe('Facebook Login and Video Upload', () => {
         cy.contains('Posting', { timeout: 60000 }).should('be.visible');
         cy.contains('Posting', { timeout: 60000 }).should('not.exist');
         cy.task('updateDynamicEntry', { videoID: video._id });
-        cy.wait(30000);
+        const time = cy.task('getNumberOne');
+        cy.wait(time);
       });
     });
   });

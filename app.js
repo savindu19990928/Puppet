@@ -29,23 +29,34 @@ const uploadVideo = async (pageUrl, user, pass) => {
         'run',
         '--spec',
         'cypress/e2e/fbUpload.cy.js',
+        '--headed',
+        '--browser',
+        'chrome',
         '--env',
         `PAGE_URL=${pageUrl},PASS=${pass},USER=${user}`
     ];
 
-    const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
+    const executeFunc = () => {
+        const childProcess = spawn(command, args, { cwd: currentDirectory, shell: 'bash' });
 
-    childProcess.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-    });
+        childProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
 
-    childProcess.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-    });
+        childProcess.stderr.on('data', (data) => {
+            console.error(`stderr: ${data}`);
+        });
 
-    childProcess.on('close', (code) => {
-        return console.log(`child process exited with code ${code}`);
-    });
+        childProcess.on('close', (code) => {
+            if (code === 1) {
+                console.log(`child process exited with code ${code}, retrying after 30 minutes...`);
+                setTimeout(executeFunc, 120000);
+            } else {
+                return console.log(`child process exited with code ${code}`);
+            }
+        });
+    };
+    executeFunc();
 };
 
 const downloadVideo = async (videoUrl, filename) => {
@@ -70,8 +81,12 @@ const deleteVideo = async () => {
         uploadedList.forEach(uVideo => {
             const filen = uVideo.name + ".mp4";
             const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
-            fs.unlinkSync(filePath);
-            console.log("Video deleted successfully!");
+            try {
+                fs.unlinkSync(filePath);
+                console.log("Video deleted successfully!");
+            } catch (error) {
+                console.log(error);
+            }
         });
     } catch (err) {
         console.error('Error deleting file:', err);
@@ -248,7 +263,7 @@ app.post('/add', async function (req, res) {
                         });
                         if (iCount === 100 || vcount === videoList.length) {
                             iCount = 0;
-                            open = new Date(open.getTime() + 10000);
+                            open = new Date(open.getTime() + 1000);
                             schedule.scheduleJob(open, async function () {
                                 await uploadVideo(pageData.url, uname, aPass);
                             });
@@ -260,6 +275,7 @@ app.post('/add', async function (req, res) {
                     console.error(error);
                 }
             });
+            await deleteVideo();
         });
     };
 });
@@ -271,7 +287,6 @@ app.post('/deletevideo/:id', async (req, res) => {
             result.uploaded = true;
             result.save();
         });
-        await deleteVideo();
         return res.end();
     } catch (error) {
         console.error(error);
