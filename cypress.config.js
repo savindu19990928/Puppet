@@ -30,12 +30,6 @@ module.exports = defineConfig({
             }
           });
           return "Done!"
-        },
-        getNumberOne: () => {
-          return Math.floor(Math.random() * (60000 - 15000 + 1)) + 15000;
-        },
-        getNumberTwo: () => {
-          return Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
         }
       });
     },

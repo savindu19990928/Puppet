@@ -49,8 +49,9 @@ const uploadVideo = async (pageUrl, user, pass) => {
 
         childProcess.on('close', (code) => {
             if (code === 1) {
-                console.log(`child process exited with code ${code}, retrying after 30 minutes...`);
-                setTimeout(executeFunc, 120000);
+                console.log(`child process exited with code ${code}, retrying after 10 - 15 minutes...`);
+                const time1 = Math.floor(Math.random() * (900000 - 600000 + 1)) + 600000;
+                setTimeout(executeFunc, time1);
             } else {
                 return console.log(`child process exited with code ${code}`);
             }
