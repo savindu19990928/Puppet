@@ -20,6 +20,7 @@ describe('Facebook Login and Video Upload', () => {
 
     cy.intercept('https://www.facebook.com/', {});
     cy.visit(pageUrl);
+    cy.contains('Reload Page', { timeout: 60000 }).should('be.visible');
     cy.contains('Reload Page').click();
     cy.contains('Switch Now', { timeout: 60000 }).should('be.visible');
     cy.contains('Switch Now').click();
