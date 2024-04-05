@@ -48,7 +48,7 @@ describe('Facebook Login and Video Upload', () => {
         cy.contains('Posting', { timeout: 120000 }).should('be.visible');
         cy.contains('Posting', { timeout: 120000 }).should('not.exist');
         cy.task('updateDynamicEntry', { videoID: video._id });
-        const time = getRandomNumber(15000, 60000);
+        const time = getRandomNumber(60000, 120000);
         cy.wait(time);
       });
     });

@@ -49,8 +49,8 @@ const uploadVideo = async (pageUrl, user, pass) => {
 
         childProcess.on('close', (code) => {
             if (code === 1) {
-                console.log(`child process exited with code ${code}, retrying after 10 - 15 minutes...`);
-                const time1 = Math.floor(Math.random() * (1200000 - 900000 + 1)) + 900000;
+                console.log(`child process exited with code ${code}, retrying after 15 - 30 minutes...`);
+                const time1 = Math.floor(Math.random() * (1800000 - 900000 + 1)) + 900000;
                 setTimeout(executeFunc, time1);
             } else {
                 return console.log(`child process exited with code ${code}`);
@@ -223,7 +223,7 @@ app.post('/add', async function (req, res) {
                     let start = new Date();
                     let open = new Date();
                     for (let video of videoList) {
-                        start = new Date(start.getTime() + 10000);
+                        start = new Date(start.getTime() + 60000);
                         schedule.scheduleJob(start, async function () {
                             await Link.findOne({ link: video.video_id, page_url: pageData.url }).then(async result => {
                                 if (result) {
