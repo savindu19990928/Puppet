@@ -32,10 +32,11 @@ describe('Facebook Login and Video Upload', () => {
         const fullName = video.name + '.mp4';
         const fpath = path.join(__dirname, 'downloads', fullName);
         cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
-        cy.get(`[aria-label="What's on your mind?"]`).type(video.caption);
+        const cap = video.caption + '   ';
+        cy.get(`[aria-label="What's on your mind?"]`).type(cap);
         const time1 = getRandomNumber(2000, 4000);
         cy.wait(time1);
-        cy.get('[aria-label="Post"]', { timeout: 60000 }).should('be.visible');
+        cy.get('[aria-label="Post"]', { timeout: 120000 }).should('be.visible');
         cy.get('[aria-label="Post"]').click();
         const time2 = getRandomNumber(2000, 4000);
         cy.wait(time2);
