@@ -17,7 +17,7 @@ module.exports = defineConfig({
           await mongoose.connect(uri);
           const db = mongoose.connection.useDb('puppet');
           const Collection = db.collection('links');
-          return await Collection.find({ page_url: pageurl, uploaded: false }).limit(100).toArray();
+          return await Collection.find({ page_url: pageurl, uploaded: false }).toArray();
         },
         updateDynamicEntry: async (data) => {
           const iD = JSON.stringify(data.videoID);
