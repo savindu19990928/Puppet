@@ -264,10 +264,7 @@ app.post('/add', async function (req, res) {
                         });
                         if (iCount === 100 || vcount === videoList.length) {
                             iCount = 0;
-                            open = new Date(open.getTime() + 1000);
-                            schedule.scheduleJob(open, async function () {
-                                await uploadVideo(pageData.url, uname, aPass);
-                            });
+                            uploadVideo(pageData.url, uname, aPass);
                         };
                         ++iCount;
                         ++vcount;
