@@ -76,11 +76,10 @@ const downloadVideo = async (videoUrl, filename) => {
     });
 };
 
-const deleteVideo = async () => {
+const deleteVideo = async (did) => {
     try {
-        const uploadedList = await Link.find({ uploaded: true });
-        uploadedList.forEach(uVideo => {
-            const filen = uVideo.name + ".mp4";
+        const uploadedV = await Link.findById(did);
+            const filen = uploadedV.name + ".mp4";
             const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
             try {
                 fs.unlinkSync(filePath);
@@ -88,7 +87,6 @@ const deleteVideo = async () => {
             } catch (error) {
                 console.log(error);
             }
-        });
     } catch (err) {
         console.error('Error deleting file:', err);
     }
@@ -218,8 +216,8 @@ app.post('/add', async function (req, res) {
         schedule.scheduleJob(begin, async function () {
             await vList(user).then((videoList) => {
                 try {
-                    let iCount = 1;
-                    let vcount = 1;
+                    let iCount = 0;
+                    let vcount = 0;
                     let start = new Date();
                     let open = new Date();
                     for (let video of videoList) {
@@ -259,21 +257,20 @@ app.post('/add', async function (req, res) {
                                     } catch (error) {
                                         console.error(error);
                                     }
-                                }
+                                };
+                                ++iCount;
+                                ++vcount;
+                                if (iCount === 100 || vcount === videoList.length) {
+                                    iCount = 0;
+                                    uploadVideo(pageData.url, uname, aPass);
+                                };
                             });
                         });
-                        if (iCount === 100 || vcount === videoList.length) {
-                            iCount = 0;
-                            uploadVideo(pageData.url, uname, aPass);
-                        };
-                        ++iCount;
-                        ++vcount;
                     };
                 } catch (error) {
                     console.error(error);
                 }
             });
-            await deleteVideo();
         });
     };
 });
@@ -285,6 +282,7 @@ app.post('/deletevideo/:id', async (req, res) => {
             result.uploaded = true;
             result.save();
         });
+        await deleteVideo(id);
         return res.end();
     } catch (error) {
         console.error(error);
