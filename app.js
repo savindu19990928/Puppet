@@ -98,7 +98,7 @@ async function vList(user1) {
     while (cursor !== "noMore") {
         let options = {
             method: 'GET',
-            url: 'https://tiktok-scraper7.p.rapidapi.com/user/posts',
+            url: 'https://tiktok-video-feature-summary.p.rapidapi.com/user/posts',
             params: {
                 unique_id: user1,
                 count: '30',
@@ -106,7 +106,7 @@ async function vList(user1) {
             },
             headers: {
                 'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
-                'X-RapidAPI-Host': 'tiktok-scraper7.p.rapidapi.com'
+                'X-RapidAPI-Host': 'tiktok-video-feature-summary.p.rapidapi.com'
             }
         };
         const response = await axios.request(options);
@@ -219,7 +219,6 @@ app.post('/add', async function (req, res) {
                     let iCount = 0;
                     let vcount = 0;
                     let start = new Date();
-                    let open = new Date();
                     for (let video of videoList) {
                         start = new Date(start.getTime() + 60000);
                         schedule.scheduleJob(start, async function () {
@@ -227,25 +226,11 @@ app.post('/add', async function (req, res) {
                                 if (result) {
                                     return;
                                 } else {
-                                    const url = 'https://www.tiktok.com/@' + user + '/video/' + video.video_id;
-                                    const options1 = {
-                                        method: 'GET',
-                                        url: 'https://tiktok-full-info-without-watermark.p.rapidapi.com/vid/index',
-                                        params: {
-                                            url: url
-                                        },
-                                        headers: {
-                                            'X-RapidAPI-Key': 'f34902baffmsh4d26ee5486241d5p188ddfjsnf62ba6a713ab',
-                                            'X-RapidAPI-Host': 'tiktok-full-info-without-watermark.p.rapidapi.com'
-                                        }
-                                    };
-
                                     try {
-                                        const response = await axios.request(options1);
                                         const hashtagsList = await extractHashtags(video.title);
                                         const randomNumber = Math.floor(1000 + Math.random() * 9000).toString();
                                         const filename = video.video_id + randomNumber;
-                                        await downloadVideo(response.data.video[0], filename);
+                                        await downloadVideo(video.play, filename);
                                         const livkID = new Link({
                                             link: video.video_id,
                                             name: filename,
