@@ -1,6 +1,6 @@
-const pageUrl = Cypress.env('PAGE_URL');
-const pass = Cypress.env('PASS');
-const user = Cypress.env('USER');
+const pageUrl = Cypress.env('PAGE_URL') || 'https://www.facebook.com/profile.php?id=61557780904591';
+const pass = Cypress.env('PASS') || 'Namikaze@1999/09/28';
+const user = Cypress.env('USER') || 'devriousteam@gmail.com';
 import path from 'path';
 
 function getRandomNumber(min, max) {
@@ -14,14 +14,16 @@ describe('Facebook Login and Video Upload', () => {
 
   it('Logs in through Facebook authentication', () => {
     cy.visit('https://www.facebook.com/');
-    cy.get('input[id="email"]').type(user);
-    cy.get('input[id="pass"]').type(pass);
-    cy.contains('Log in').click();
-
-    cy.intercept('https://www.facebook.com/', {});
+    cy.contains('Разрешить все cookie').click();
+    cy.contains('На главную').click();
     cy.visit(pageUrl);
-    cy.contains('Reload Page', { timeout: 60000 }).should('be.visible');
-    cy.contains('Reload Page').click();
+    cy.contains('Обновить страницу', { timeout: 60000 }).should('be.visible');
+    cy.contains('Обновить страницу').click();
+    cy.get('[aria-label="Close"]', { timeout: 120000 }).should('be.visible');
+    cy.get('[aria-label="Close"]').click();
+    cy.get('[aria-label="Email or phone"]').type(user);
+    cy.get('[aria-label="Password"]').type(pass);
+    cy.get('[aria-label="Accessible login button"]').click();
     cy.contains('Switch Now', { timeout: 60000 }).should('be.visible');
     cy.contains('Switch Now').click();
     cy.wait(10000);
