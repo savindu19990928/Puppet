@@ -1,6 +1,6 @@
-const pageUrl = Cypress.env('PAGE_URL') || 'https://www.facebook.com/profile.php?id=61557780904591';
-const pass = Cypress.env('PASS') || 'Namikaze@1999/09/28';
-const user = Cypress.env('USER') || 'devriousteam@gmail.com';
+const pageUrl = Cypress.env('PAGE_URL');
+const pass = Cypress.env('PASS');
+const user = Cypress.env('USER');
 import path from 'path';
 
 function getRandomNumber(min, max) {

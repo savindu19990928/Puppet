@@ -79,14 +79,14 @@ const downloadVideo = async (videoUrl, filename) => {
 const deleteVideo = async (did) => {
     try {
         const uploadedV = await Link.findById(did);
-            const filen = uploadedV.name + ".mp4";
-            const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
-            try {
-                fs.unlinkSync(filePath);
-                console.log("Video deleted successfully!");
-            } catch (error) {
-                console.log(error);
-            }
+        const filen = uploadedV.name + ".mp4";
+        const filePath = path.join(__dirname, 'cypress', 'e2e', 'downloads', filen);
+        try {
+            fs.unlinkSync(filePath);
+            console.log("Video deleted successfully!");
+        } catch (error) {
+            console.log(error);
+        }
     } catch (err) {
         console.error('Error deleting file:', err);
     }
@@ -110,9 +110,12 @@ async function vList(user1) {
             }
         };
         const response = await axios.request(options);
-        response.data.data.videos.forEach(video => {
-            videoListf.push(video)
-        });
+
+        if (response.data.data.videos) {
+            response.data.data.videos.forEach(video => {
+                videoListf.push(video);
+            });
+        }
         if (response.data.data.hasMore === true) {
             cursor = response.data.data.cursor;
         } else {
