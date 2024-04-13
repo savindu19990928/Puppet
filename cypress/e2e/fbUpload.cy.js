@@ -25,6 +25,7 @@ describe('Facebook Login and Video Upload', () => {
     cy.get('[aria-label="Password"]').type(pass);
     cy.get('[aria-label="Accessible login button"]').click();
     cy.contains('Switch Now', { timeout: 60000 }).should('be.visible');
+    cy.contains('Switch Now').scrollIntoView();
     cy.contains('Switch Now').click();
     cy.wait(10000);
     cy.task('getDynamicEntries', pageUrl).then((entries) => {
