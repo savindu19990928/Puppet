@@ -33,6 +33,7 @@ describe('Facebook Login and Video Upload', () => {
         cy.contains('Photo/video').click();
         const fullName = video.name + '.mp4';
         const fpath = path.join(__dirname, 'downloads', fullName);
+        cy.contains('Add Photos/Videos', { timeout: 60000 }).should('be.visible');
         cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
         const cap = video.caption + '   ';
         cy.get(`[aria-label="What's on your mind?"]`).type(cap);
