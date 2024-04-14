@@ -29,6 +29,7 @@ const uploadVideo = async (pageUrl, user, pass) => {
         'run',
         '--spec',
         'cypress/e2e/fbUpload.cy.js',
+        '--headed',
         '--browser',
         'chrome',
         '--env',
