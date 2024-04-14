@@ -8,6 +8,7 @@ module.exports = defineConfig({
   watchForFileChanges: false,
   experimentalTaskParallelization: true,
   userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+  chromeWebSecurity: false,
 
   e2e: {
     setupNodeEvents(on, config) {
