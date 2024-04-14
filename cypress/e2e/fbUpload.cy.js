@@ -24,6 +24,9 @@ describe('Facebook Login and Video Upload', () => {
     cy.get('[aria-label="Email or phone"]').type(user);
     cy.get('[aria-label="Password"]').type(pass);
     cy.get('[aria-label="Accessible login button"]').click();
+    cy.window().then((win) => {
+      cy.stub(win, 'confirm').as('confirm').returns(true);
+    });
     cy.contains('Switch Now', { timeout: 60000 }).should('be.visible');
     cy.contains('Switch Now').scrollIntoView();
     cy.contains('Switch Now').click();
@@ -34,6 +37,7 @@ describe('Facebook Login and Video Upload', () => {
         cy.contains('Photo/video').click();
         const fullName = video.name + '.mp4';
         const fpath = path.join(__dirname, 'downloads', fullName);
+        cy.contains('Add Photos/Videos', { timeout: 120000 }).should('be.visible');
         cy.contains('Add Photos/Videos').scrollIntoView();
         cy.contains('Add Photos/Videos').selectFile(fpath, { action: 'drag-drop', force: true });
         const cap = video.caption + '   ';
